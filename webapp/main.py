@@ -1,7 +1,10 @@
 
 """FastAPI backend for the ORVGROUP AI Agent Web App."""
 
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from agent.core import run_agent
@@ -12,6 +15,8 @@ app = FastAPI(
     version="1.0.0",
 )
 
+FRONTEND_FILE = Path(__file__).parent / "static" / "index.html"
+
 
 class ChatRequest(BaseModel):
     prompt: str = Field(min_length=1, max_length=4000)
@@ -19,11 +24,7 @@ class ChatRequest(BaseModel):
 
 @app.get("/")
 def home():
-    return {
-        "name": "ORVGROUP AI Agent",
-        "status": "online",
-        "message": "Welcome to the ORVGROUP AI Agent API.",
-    }
+    return FileResponse(FRONTEND_FILE)
 
 
 @app.get("/health")
@@ -42,8 +43,7 @@ def chat(request: ChatRequest):
         )
 
     try:
-        result = run_agent(prompt)
-        return result
+        return run_agent(prompt)
 
     except ValueError as exc:
         raise HTTPException(
