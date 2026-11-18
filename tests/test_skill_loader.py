@@ -23,3 +23,14 @@ def test_load_skill_rejects_unknown_skill():
 
     with pytest.raises(ValueError):
         load_skill("unknown-skill")
+        
+from agent.skill_loader import list_skills
+
+
+def test_list_skills_returns_available_skills():
+    skills = list_skills()
+
+    assert "python-debugging" in skills
+    assert "frontend-developer" in skills
+    assert "code-reviewer" in skills
+    assert len(skills) == 6
