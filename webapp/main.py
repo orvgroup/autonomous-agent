@@ -2,6 +2,7 @@
 """FastAPI backend for the ORVGROUP AI Agent Web App."""
 
 import os
+import secrets
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -45,6 +46,11 @@ class ChatRequest(BaseModel):
     prompt: str = Field(min_length=1, max_length=4000)
 
 
+class LoginRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=100)
+    password: str = Field(min_length=1, max_length=200)
+
+
 @app.get("/")
 def home():
     return FileResponse(FRONTEND_FILE)
@@ -55,9 +61,54 @@ def health():
     return {"status": "healthy"}
 
 
+@app.post("/api/login")
+@limiter.limit("5/minute")
+def login(request: Request, credentials: LoginRequest):
+    expected_username = os.getenv("APP_USERNAME")
+    expected_password = os.getenv("APP_PASSWORD")
+
+    if not expected_username or not expected_password:
+        raise HTTPException(
+            status_code=503,
+            detail="Login is not configured.",
+        )
+
+    username_ok = secrets.compare_digest(
+        credentials.username,
+        expected_username,
+    )
+    password_ok = secrets.compare_digest(
+        credentials.password,
+        expected_password,
+    )
+
+    if not (username_ok and password_ok):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password.",
+        )
+
+    request.session.clear()
+    request.session["authenticated"] = True
+
+    return {"message": "Login successful."}
+
+
+@app.post("/api/logout")
+def logout(request: Request):
+    request.session.clear()
+    return {"message": "Logged out."}
+
+
 @app.post("/api/chat")
 @limiter.limit("10/minute")
 def chat(request: Request, chat_request: ChatRequest):
+    if not request.session.get("authenticated"):
+        raise HTTPException(
+            status_code=401,
+            detail="Please log in to use the agent.",
+        )
+
     prompt = chat_request.prompt.strip()
 
     if not prompt:
