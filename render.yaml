@@ -14,3 +14,11 @@ services:
         value: gpt-4.1-mini
       - key: ORVGROUP_REQUIRE_APPROVAL
         value: "true"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: APP_USERNAME
+        sync: false
+      - key: APP_PASSWORD
+        sync: false
+      - key: COOKIE_SECURE
+        value: "true"
