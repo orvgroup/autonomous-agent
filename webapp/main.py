@@ -1,6 +1,7 @@
 
 """FastAPI backend for the ORVGROUP AI Agent Web App."""
 
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -9,6 +10,7 @@ from pydantic import BaseModel, Field
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from starlette.middleware.sessions import SessionMiddleware
 
 from agent.core import run_agent
 
@@ -24,6 +26,16 @@ app.state.limiter = limiter
 app.add_exception_handler(
     RateLimitExceeded,
     _rate_limit_exceeded_handler,
+)
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv(
+        "SESSION_SECRET",
+        "development-only-change-this-secret",
+    ),
+    same_site="lax",
+    https_only=os.getenv("COOKIE_SECURE", "false").lower() == "true",
 )
 
 FRONTEND_FILE = Path(__file__).parent / "static" / "index.html"
