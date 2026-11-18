@@ -1,0 +1,129 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORVGROUP AI Agent</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #0b1020;
+            color: #f4f6fc;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 40px 16px;
+        }
+        .app {
+            width: 100%;
+            max-width: 850px;
+        }
+        header { margin-bottom: 28px; }
+        h1 { margin-bottom: 8px; }
+        .muted { color: #9ba7bd; }
+        .panel {
+            background: #151d31;
+            border: 1px solid #293650;
+            border-radius: 14px;
+            padding: 22px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 130px;
+            padding: 14px;
+            border-radius: 9px;
+            border: 1px solid #394762;
+            background: #0d1528;
+            color: white;
+            font: inherit;
+            resize: vertical;
+        }
+        button {
+            margin-top: 14px;
+            padding: 12px 22px;
+            border: 0;
+            border-radius: 8px;
+            background: #5578f5;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:disabled { opacity: .5; cursor: wait; }
+        #status { margin-top: 18px; }
+        pre {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            color: #dce5f8;
+            line-height: 1.6;
+        }
+        .result { margin-top: 20px; }
+    </style>
+</head>
+<body>
+<main class="app">
+    <header>
+        <h1>ORVGROUP AI Agent</h1>
+        <p class="muted">Your AI-powered task assistant</p>
+    </header>
+
+    <section class="panel">
+        <h2>What would you like me to do?</h2>
+        <form id="chat-form">
+            <textarea id="prompt" maxlength="4000"
+                placeholder="Describe your task..." required></textarea>
+            <button id="send" type="submit">Run Agent</button>
+        </form>
+        <p id="status" class="muted">Ready</p>
+    </section>
+
+    <section class="panel result">
+        <h2>Agent Response</h2>
+        <pre id="output">Your result will appear here.</pre>
+    </section>
+</main>
+
+<script>
+const form = document.getElementById("chat-form");
+const promptInput = document.getElementById("prompt");
+const sendButton = document.getElementById("send");
+const statusText = document.getElementById("status");
+const output = document.getElementById("output");
+
+form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const prompt = promptInput.value.trim();
+    if (!prompt) return;
+
+    sendButton.disabled = true;
+    statusText.textContent = "Agent is processing your request...";
+    output.textContent = "";
+
+    try {
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || "Request failed.");
+        }
+
+        output.textContent = JSON.stringify(data, null, 2);
+        statusText.textContent = "Request completed.";
+    } catch (error) {
+        output.textContent = error.message;
+        statusText.textContent = "Request failed.";
+    } finally {
+        sendButton.disabled = false;
+    }
+});
+</script>
+</body>
+</html>
