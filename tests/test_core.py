@@ -13,11 +13,17 @@ def test_run_agent(
     mock_llm,
     mock_run_task,
 ):
-    mock_skills.return_value = ["python-debugging"]
+    mock_skills.return_value = {
+        "python-debugging": "Python debugging instructions"
+    }
+
     mock_llm.return_value = "Here is the solution"
+
     mock_run_task.return_value.status.value = "failed"
+    mock_run_task.return_value.steps = []
 
     result = run_agent("Debug a Python error")
 
-    assert result["response"] == "Here is the solution"
+    assert result["ai_response"] == "Here is the solution"
     assert "python-debugging" in result["selected_skills"]
+    assert result["execution_status"] == "failed"
