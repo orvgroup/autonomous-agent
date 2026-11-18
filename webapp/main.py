@@ -3,16 +3,27 @@
 
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from agent.core import run_agent
+
+limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title="ORVGROUP AI Agent",
     description="Backend API for the ORVGROUP Autonomous AI Agent.",
     version="1.0.0",
+)
+
+app.state.limiter = limiter
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler,
 )
 
 FRONTEND_FILE = Path(__file__).parent / "static" / "index.html"
@@ -33,8 +44,9 @@ def health():
 
 
 @app.post("/api/chat")
-def chat(request: ChatRequest):
-    prompt = request.prompt.strip()
+@limiter.limit("10/minute")
+def chat(request: Request, chat_request: ChatRequest):
+    prompt = chat_request.prompt.strip()
 
     if not prompt:
         raise HTTPException(
