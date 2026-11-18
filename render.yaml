@@ -1,0 +1,16 @@
+
+services:
+  - type: web
+    name: orvgroup-ai-agent
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn webapp.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ORVGROUP_MODEL
+        value: gpt-4.1-mini
+      - key: ORVGROUP_REQUIRE_APPROVAL
+        value: "true"
